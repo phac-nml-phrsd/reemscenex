@@ -1,0 +1,40 @@
+Package: reemscenex
+Title: Scenario Exploration with reem
+Version: 0.0.0.1
+Authors@R: c(
+    person("Irena", "Papst", , "irena.papst@canada.ca", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-5901-7585")),
+    person("Lisa", "Kanary", , "lisa.kanary@canada.ca", role = c("aut"),
+           comment = c(ORCID = "0000-0002-9007-1317"))       
+    )
+Description: Modelling tools to explore scenarios with the REEM model.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE, roclets = c("collate", "namespace", "rd",
+    "roxyglobals::global_roclet"))
+RoxygenNote: 7.3.2
+Imports: 
+    cli,
+    dplyr,
+    lubridate,
+    methods,
+    reem (>= 0.9.1),
+    tidyr,
+    rlang
+Depends: 
+    R (>= 2.10)
+LazyData: true
+Suggests: 
+    ggplot2,
+    knitr,
+    rmarkdown,
+    devtools,
+    roxyglobals,
+    testthat (>= 3.0.0),
+    tibble,
+    glue,
+    stringr
+Config/roxyglobals/filename: globals.R
+Config/roxyglobals/unique: TRUE
+Config/testthat/edition: 3
+VignetteBuilder: knitr

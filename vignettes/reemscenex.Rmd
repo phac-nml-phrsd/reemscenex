@@ -1,0 +1,253 @@
+---
+title: "Getting started with reemscenex"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with reemscenex}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7.19
+)
+```
+
+```{r setup}
+library(reemscenex)
+library(ggplot2)
+```
+
+The goal of the `{reemscenex}` package is to extend `{reem}` to be able to simulate hypothetical scenarios in a forecast. The general procedure is to start with a `{reem}` model object that has previously been fitted to data, update its parameters to reflect a new scenario, and simulate the model.
+
+In this vignette, we use a `{reem}` fitted model object built into `{reemscenex}` called `model.example` in order to demonstrate the functionality of the package.
+
+# A note about `{reem}` model objects
+
+`{reem}` uses the object-oriented [Reference Class](http://adv-r.had.co.nz/R5.html) system, which has three main differences worth noting to the usual functional programming approach adopted by most R packages:
+
+- The functions (methods) that can operate on a `{reem}` model object are bundled in the object (as opposed to called on the object from the package). For instance, `{reem}`'s forecast method is called on a `model` object like `model$forecast()` (object-oriented), as opposed to `reem::forecast(model)` (functional). 
+- A `{reem}` model object's methods **modify the object in memory**! For instance, if you use the `model$forecast()` method, the results of the forecast are saved in the `model` going forward. 
+- The usual assignment operator (`<-` or `=`) **does not copy the object over** for Reference classes, but instead aliases it with another name. Doing
+  ```{r}
+  #| eval: FALSE
+  model.fitted <- model.example
+  model.fitted$forecast()
+  ```
+  **would modify `model.example` and `model.fitted`** by adding the forecast output to them (because they are the same object)! This feature is worth bearing in mind and it's usually safer to use each model object's built-in `$copy()` method as we do now to avoid keep around a "clean" copy of an example model object as `model.example`:
+  ```{r}
+  model.fitted <- model.example$copy()
+  ```
+
+# Generating forecasts
+
+We can forecast a scenario using the `reemscenex::fcst_sc()` function. This function uses the model object's built-in `$forecast()` method.
+
+## Status quo forecast
+
+If we just run `fcst_sc()` on the model object, it will produce a status quo forecast with the parameters and forecast settings already baked into `model.fitted` (attached to the object when the model is fitted): 
+
+```{r, warnings = FALSE}
+fcst1 <- fcst_sc(model=model.fitted)
+```
+
+This function returns a list of outputs:
+
+```{r}
+class(fcst1)
+names(fcst1)
+```
+
+The documentation for `fcst_sc()` tells us what this output is:
+
+```{r}
+?fcst_sc
+```
+
+For instance, here is the forecast summary:
+
+```{r}
+head(fcst1$summary.fcst)
+```
+
+Again, because of how Reference Classes work, this output is also saved within the `model.fitted` object in memory, under the `fcst.obj` element:
+
+```{r}
+names(model.fitted$fcst.obj)
+
+# here is the forecast summarized by daily quantiles
+head(model.fitted$fcst.obj$summary.fcst)
+```
+
+For more information about forecast outputs, as well as `{reem}` itself, you can review [the `{reem}` package README](https://github.com/phac-nml-phrsd/reem/blob/main/README.md).
+
+## Forecasting with a scenario
+
+If we want to forecast with a scenario, _i.e._ by updating the baseline (non-fitted) parameters, we can use the `prm.sc` argument of `fcst_sc()`. (However, this is not the recommended approach, and we will present a better way to accomplish this task in the next section.) 
+
+For instance, the default value for the hospitalization proportion, `h.prop` is:
+
+```{r}
+model.fitted$prms$h.prop
+```
+
+We can increase this by an order of magnitude to see a clear effect in the forecast:
+
+```{r}
+fcst2 <- fcst_sc(
+  model=model.fitted,
+  prm.sc=list(h.prop = model.fitted$prms$h.prop*10) 
+)
+```
+
+```{r}
+#| echo: false
+
+# vignette functions, just for demo
+prep_fcst <- function(fcst, model, vars){
+  (reem:::summarize_fcst(fcst$simfwd, model$fcst.prm, vars = vars) 
+   |> tidyr::pivot_wider(
+  id_cols = c("name", "date", "mean"),
+  names_from = "qprob",
+  values_from = "q"
+  ))
+}
+
+plot_fcst <- function(sim){
+  pp <- ggplot(sim, aes(x = date))
+  
+  if("fcst" %in% colnames(sim)){
+    pp <- (pp
+      + geom_ribbon(aes(ymin = `0.05`, ymax = `0.95`, fill = fcst), alpha = 0.5) 
+      + geom_line(aes(y = mean, colour = fcst), linewidth = 1.25)     
+    )
+  } else {
+    pp <- (pp
+      + geom_ribbon(aes(ymin = `0.05`, ymax = `0.95`), alpha = 0.5) 
+      + geom_line(aes(y = mean), linewidth = 1.25)     
+    )
+  }
+  
+  (pp + theme(axis.title = element_blank()))
+}
+
+annotate_x <- function(gg, x, y.pos, label, font.size = 3){
+    y.range <- layer_scales(gg)$y$get_limits()
+    label.df <- data.frame(
+        x = x,
+        y = y.range[1] + y.pos * (y.range[2] - y.range[1]),
+        label = label
+    )
+    (gg
+        + geom_vline(data = label.df, mapping = aes(xintercept = x), linetype="dashed", alpha = 0.5)
+        + geom_label(data = label.df,  mapping = aes(x = x, y = y, label = label), alpha = 0.5, size = font.size)
+    )
+}
+```
+
+```{r}
+# prep_fcst() and plot_fcst() are utilities defined in this vignette
+# and are not included in the `{reemscenex}` package
+
+(lapply(
+  list(fcst1, fcst2), 
+  \(x){prep_fcst(x, model=model.fitted, vars=c("H"))})
+  |> dplyr::bind_rows(.id = "fcst") 
+  |> plot_fcst()
+  + labs(title = "Predicted hospitalizations")
+)
+```
+
+We see above that increasing `h.prop` greatly increased the predicted hospitalizations over time.
+
+Updating model parameters via `fcst_sc()` will change the `model.fitted` object in memory:
+
+```{r}
+model.fitted$prms$h.prop
+```
+
+## Scenario functions
+
+Scenarios are fundamentally built by modifying the model object's parameters, though doing this manually as demonstrated above is not advised. Instead, `{reemscenex}` implements an `sc()` function that carefully sets up a pre-defined scenario in the model, validating inputs and ensures requested scenarios make sense with the underlying fitted model:
+
+```{r}
+# gradual change in transmission
+# reset model object
+model.fitted <- model.example$copy()
+
+start.date <- as.Date("2022-01-30")
+end.date <- as.Date("2022-03-30")
+value <- 2
+
+sim <- (
+  # define scenario
+    sc(
+    model = model.fitted, 
+    opts = list(
+      name = "gradual change in transmission",
+      start.date = start.date,
+      end.date = end.date,
+      value = value,
+      epsilon = 0.001
+    )
+  )
+  # forecast from the scenario
+  |> fcst_sc(model = model.fitted)
+)
+
+(sim
+  |> prep_fcst(model=model.fitted, vars=c("Y"))
+  |> plot_fcst()
+  |> annotate_x(
+      x = start.date, y.pos = 0.8,
+      label = stringr::str_wrap(glue::glue("transmission increases gradually by {value}x between {format(start.date, '%d %b')} and {format(end.date, '%d %b')}"), width = 30)
+    )
+  + labs(title = "Predicted clinical reports")
+)
+```
+
+A full description of pre-defined scenarios can be found in `vignette("scenarios")`. You can remind yourself of the scenarios with short descriptions and required options for each in the Details section of `?sc`. 
+
+## Composing scenarios
+
+Scenarios can be composed by chaining successive calls to `sc()`:
+
+```{r}
+# reset model object
+model.fitted <- model.example$copy()
+
+# set up scenario options
+start.date <- as.Date(c("2022-01-30", "2022-02-15"))
+value <- c(1.5, 3)
+
+sim <- ( 
+  # chain two sudden changes in transmission successively
+  sc(
+    model = model.fitted, 
+    opts = list(
+    name = "sudden change in transmission",
+    start.date = start.date[1],
+    value = value[1]
+  ))
+  |> sc(
+    model = model.fitted, 
+    opts = list(
+    name = "sudden change in transmission",
+    start.date = start.date[2],
+    value = value[2]
+  ))
+  # forecast from composed scenarios
+  |> fcst_sc(model = model.fitted)
+)
+
+(sim
+  # plot the forecast (using in-vignette utilities, not package functions!)
+  |> prep_fcst(model=model.fitted, vars=c("Y"))
+  |> plot_fcst()
+  |> annotate_x(x = start.date, y.pos = c(0.65, 0.9),
+  label = stringr::str_wrap(glue::glue("transmission increases suddenly by {value}x on {format(start.date, '%d %b')}"), width = 20))
+  + labs(title = "Predicted incidence")
+)
+```
