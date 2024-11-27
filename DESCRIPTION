@@ -1,6 +1,6 @@
 Package: reemscenex
 Title: Scenario Exploration with reem
-Version: 0.0.0.1
+Version: 0.0.2
 Authors@R: c(
     person("Irena", "Papst", , "irena.papst@canada.ca", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-5901-7585")),
