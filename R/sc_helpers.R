@@ -43,7 +43,7 @@ gradual_change <- function(p, delta, epsilon, x) {
 #' Logistic change in transmission
 #'
 #' @param chg Numerical. Long term change for the value of B(t).
-#' Defined as: B(t) = 1 + chg * Logistic(Lo, t.half, t)
+#' Defined as: B(t) = 1 + chg * Logistic(L0, t.half, t)
 #' where Logistic(Lo, t.half,t) is the logistic function such that:
 #' L(L0, t.half, t=0) = L0
 #' L(L0, t.half, t=t.half)= 0.5
