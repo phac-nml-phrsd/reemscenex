@@ -281,7 +281,7 @@ sc_trans_logistic <- function(prm.sc,
   tvec = 0:(length(dvec)-1)
 
   mult = logistic_change(
-    chg    = value,
+    chg    = value - 1,
     t.half = as.numeric(end.date - start.date) / 2,
     L0     = L0,
     t      = tvec
