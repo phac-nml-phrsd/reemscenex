@@ -53,9 +53,16 @@ sc <- function(prm.sc = NULL, model, opts) {
       prm.sc = prm.sc, model = model,
       start.date = start.date, end.date = end.date,
       value = value, epsilon = epsilon
-    )}
+      )}
     name_not_found <- FALSE
   }
+
+  if(name == "logistic change in transmission"){
+    prm.sc = sc_trans_logistic()
+    name_not_found <- FALSE
+  }
+
+
   #
   #   if(name=="Invasion change in transmission"){
   #   prm.sc <- sc_trans_invasion(prm.sc, model, FILL IN ARGS)
@@ -224,6 +231,74 @@ sc_trans_gradual <- function(prm.sc = NULL, model, start.date, end.date, value, 
 
   prm.sc
 }
+
+#' Scenario: logistic change in transmission
+#'
+#' @param prm.sc (Optional) list of existing scenario parameters
+#' @template model
+#' @param start.date Date on which to start change transmission
+#' @param end.date Date on which to end change transmission
+#' @param value Multiplier for transmission after `date`
+#' @param L0 (Optional) Initial change at time 0. Must be 0 < L0 < 1.
+#'
+#' @template return-prm.sc
+#'
+#' @export
+#' @autoglobal
+sc_trans_logistic <- function(prm.sc,
+                              model,
+                              start.date,
+                              end.date,
+                              value,
+                              L0 = 0.02) {
+
+  # Argument consistency checks
+  start.date <- parse_date(start.date)
+  end.date   <- parse_date(end.date)
+
+  sim.start.date <- model$prms$date.start
+  sim.end.date   <- sim.start.date + model$prms$horizon
+
+  check_date_order(sim.start.date, start.date)
+  check_date_order(start.date, sim.end.date)
+  check_date_order(start.date, end.date)
+
+  if (L0 <= 0 | L0 >= 1) {
+    cli::cli_abort(
+      "Scenario option {.var L0} = {.val {L0}} must be strictly between 0 and 1.")
+  }
+
+  # translate date of change into time index
+
+  dvec = as.Date(start.date:end.date, origin = '1970-01-01')
+  tvec = 0:(length(dvec)-1)
+
+  mult = logistic_change(
+    chg    = value,
+    t.half = as.numeric(end.date - start.date) / 2,
+    L0     = L0,
+    t      = tvec
+  )
+
+  B_new <- data.frame(date = dvec, mult = mult)
+
+  # initialize prm.sc list if nseed be (not provided by user)
+  if (is.null(prm.sc)) prm.sc <- list()
+
+  # if B isn't in existing parameters
+  # (either because it isn't in the list or
+  # because the user didn't provide a parameter list)
+  # return B as computed above
+  if (is.null(prm.sc$B)) {
+    prm.sc$B <- B_new
+  } else {
+    # otherwise, compose transmission scenarios
+    prm.sc$B <- compose_B(prm.sc$B, B_new)
+  }
+
+  return(prm.sc)
+}
+
 
 # Helper to compose two B scenarios (not exported)
 # --------------------
