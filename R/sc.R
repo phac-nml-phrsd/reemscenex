@@ -8,6 +8,7 @@
 #' Currently implemented scenarios, and the values required to specify them, include:
 #' - `name = "sudden change in transmission"`: A sudden change in transmission in a given date. See ?sc_trans_gradual for required scenario arguments.
 #' - `name = "gradual change in transmission"`: A gradual change in transmission between two given dates. See ?sc_trans_gradual for required scenario arguments
+#' - `name = "logistic change in transmission"`: A change in transmission between two given dates, parameterized with a logistic function. See ?sc_trans_logistic for required scenario arguments
 #'
 #' All dates must be in YYYY-MM-DD format, either as `character` or `Date` objects. `value` must always be numeric.
 #'
@@ -58,10 +59,16 @@ sc <- function(prm.sc = NULL, model, opts) {
   }
 
   if(name == "logistic change in transmission"){
-    prm.sc = sc_trans_logistic()
+    prm.sc = sc_trans_logistic(
+      prm.sc     = prm.sc,
+      model      = model,
+      start.date = start.date,
+      end.date   = end.date,
+      value      = value,
+      L0         = 0.02)
+
     name_not_found <- FALSE
   }
-
 
   #
   #   if(name=="Invasion change in transmission"){
@@ -75,7 +82,7 @@ sc <- function(prm.sc = NULL, model, opts) {
     )
   }
 
-  prm.sc
+  return(prm.sc)
 }
 
 # Specific scenario functions (not exported)
@@ -239,7 +246,7 @@ sc_trans_gradual <- function(prm.sc = NULL, model, start.date, end.date, value, 
 #' @param start.date Date on which to start change transmission
 #' @param end.date Date on which to end change transmission
 #' @param value Multiplier for transmission after `date`
-#' @param L0 (Optional) Initial change at time 0. Must be 0 < L0 < 1.
+#' @param L0 Numerical. Initial change at time 0. Must be 0 < L0 < 1.
 #'
 #' @template return-prm.sc
 #'
@@ -250,7 +257,7 @@ sc_trans_logistic <- function(prm.sc,
                               start.date,
                               end.date,
                               value,
-                              L0 = 0.02) {
+                              L0) {
 
   # Argument consistency checks
   start.date <- parse_date(start.date)
