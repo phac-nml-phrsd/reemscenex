@@ -38,7 +38,50 @@ mult = reemscenex:::logistic_change(
     |> ggplot2::ggplot(ggplot2::aes(x = date, y = mult))
     + ggplot2::geom_line()
     + ggplot2::theme_minimal()
-    + ggplot2::labs(title = "Transmission increase due to new variant")
+    + ggplot2::labs(title = "Transmission increase due to invading variant")
+    +ggplot2::scale_y_continuous(labels = scales::label_percent())
+    +ggplot2::theme(axis.title = ggplot2::element_blank())
+)
+
+# plot of more general transmission change scenario
+start.date <- as.Date("2024-12-04", origin = "1970-01-01")
+change.date.1 <- as.Date("2024-12-11", origin = "1970-01-01")
+change.date.2 <- as.Date("2024-12-25", origin = "1970-01-01")
+end.date <- as.Date("2025-01-09", origin = "1970-01-01")
+
+dvec <- seq(start.date, end.date, by=1)
+
+dvec1 = as.Date(start.date:change.date.1, origin = "1970-01-01")
+tvec1 = 0:(length(dvec1) - 1)
+
+dvec2 = as.Date(change.date.2:end.date, origin = "1970-01-01")
+tvec2 = 0:(length(dvec2) - 2)
+
+mult = c(
+    reemscenex:::logistic_change(
+        chg    = -0.1,
+        t.half = as.numeric(change.date.1 - start.date) / 2,
+        L0     = 0.00001,
+        t      = tvec1
+    ),
+    rep(0.9, length(change.date.1:change.date.2)-1),
+    reemscenex:::logistic_change(
+        chg    = -0.1,
+        t.half = (as.numeric(end.date - change.date.2) / 2),
+        L0     = 0.99999,
+        t      = tvec2
+    )
+) - 1
+
+    
+(data.frame(
+    date = dvec,
+    mult = mult
+)
+    |> ggplot2::ggplot(ggplot2::aes(x = date, y = mult))
+    + ggplot2::geom_line()
+    + ggplot2::theme_minimal()
+    + ggplot2::labs(title = "Transmission change due to successful messaging")
     +ggplot2::scale_y_continuous(labels = scales::label_percent())
     +ggplot2::theme(axis.title = ggplot2::element_blank())
 )
