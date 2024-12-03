@@ -1,8 +1,8 @@
-# inputs for omicron BA.1
+# sample inputs
 selection.coefficient <- 0.138 # avg growth rate per day
 infectious.period <- 3
 L0 <- 0.05
-start.date <- lubridate::today() - lubridate::weeks(1)
+start.date <- lubridate::today() - lubridate::weeks(1) # invasion started a week from today with share of 5% relative to rest
 
 # calculate params for input into scenario
 t.half <- 1/selection.coefficient*log(1/L0-1)
@@ -38,7 +38,7 @@ mult = reemscenex:::logistic_change(
     |> ggplot2::ggplot(ggplot2::aes(x = date, y = mult))
     + ggplot2::geom_line()
     + ggplot2::theme_minimal()
-    + ggplot2::labs(title = "Transmission increase due to invading variant")
+    + ggplot2::labs(title = "Transmission increase due to new variant")
     +ggplot2::scale_y_continuous(labels = scales::label_percent())
     +ggplot2::theme(axis.title = ggplot2::element_blank())
 )
