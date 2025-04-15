@@ -2,20 +2,13 @@
 
 An R package to perform scenario exploration using [reem](https://github.com/phac-nml-phrsd/reem).
 
-## Get started
+# Get started
 
 Please review the main package vignette (`vignette("reemscenex")`) first, followed by the supplementary scenarios vignette (`vignette("scenarios")`) to get started.
 
----
+# For developers
 
-## For developers
-
-To start, be sure to always
-
-1. Identify the branch you want to work on (check on GitLab for available branches and locally in GitHub Desktop for the ones you have available)
-1. Sync with the cloud repo on GitLab via GitHub Desktop
-
-### `renv`
+## `renv`
 
 This package uses [`renv`](https://rstudio.github.io/renv/index.html) to manage dependencies.
 
@@ -44,7 +37,7 @@ usethis::use_package("reem", min_version="[[version-number]]")
 
 Now, run all package unit tests with `devtools::test()` and ensure they are passing.
 
-### "Get started" guide
+## "Get started" guide
 
 Use `vignettes/reemscenex.Rmd` to get familiar with current package functionality. This demo should be updated as new functions and features are added. 
 
@@ -59,7 +52,7 @@ Using either of these options will result in `vignettes/reemscenex.html`, which 
 
 You can always try to compile the vignette without re-installing the package with `rmarkdown::render("vignettes/my-vignette.Rmd")`. This is a much faster process and can be really useful if you're just iterating on vignette text, or you're working on code chunks but you aren't simultaneously working on package functions. However, if you've updated the package since the last time you installed, and your vignette relies on those changes, compilation of the vignette could fail.
 
-### Scenarios guide
+## Scenarios guide
 
 Use `vignettes/scenarios.Rmd` to keep track of which scenarios are currently available and to document the development of new scenarios.
 
